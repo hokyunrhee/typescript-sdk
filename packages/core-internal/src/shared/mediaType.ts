@@ -55,3 +55,12 @@ export function isJsonContentType(header: string | null | undefined): boolean {
     }
     return mediaTypeEssence(header) === 'application/json';
 }
+
+/**
+ * Whether a raw `Content-Type` header value denotes `text/event-stream`, the
+ * media type of an SSE response. Parameters are ignored, as in
+ * {@link isJsonContentType}.
+ */
+export function isEventStreamContentType(header: string | null | undefined): boolean {
+    return mediaTypeEssence(header) === 'text/event-stream';
+}
