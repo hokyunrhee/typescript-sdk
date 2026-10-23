@@ -16,7 +16,8 @@ import { StdioServerTransport } from './stdio';
 async function StdioServerTransport_basicUsage() {
     //#region StdioServerTransport_basicUsage
     const server = new McpServer({ name: 'my-server', version: '1.0.0' });
-    const transport = new StdioServerTransport();
+    // A message larger than 4 MB closes the transport with an error.
+    const transport = new StdioServerTransport(process.stdin, process.stdout, { maxBufferSize: 4 * 1024 * 1024 });
     await server.connect(transport);
     //#endregion StdioServerTransport_basicUsage
 }
