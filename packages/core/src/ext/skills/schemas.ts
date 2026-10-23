@@ -21,11 +21,13 @@ export const SkillResourceEntrySchema = z.looseObject({
 
 export const SkillFrontmatterSchema = z
     .looseObject({
-        name: z.string(),
+        name: z.string().min(1),
         description: z.string()
     })
     // Zod copies an own `__proto__` field by assignment, which makes it the prototype: fields no key listing shows.
-    .refine(frontmatter => Object.getPrototypeOf(frontmatter) === Object.prototype, 'frontmatter must not have a "__proto__" field');
+    .refine(frontmatter => Object.getPrototypeOf(frontmatter) === Object.prototype, 'frontmatter must not have a "__proto__" field')
+    // The Agent Skills format caps a skill name at 64 characters.
+    .refine(frontmatter => frontmatter.name.length <= 64, 'name must be at most 64 characters');
 
 export const SkillResourcesSchema = z.union([z.array(SkillResourceEntrySchema), z.literal('dynamic')]);
 
