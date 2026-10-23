@@ -39,6 +39,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # v5 turns on pnpm caching from package.json#packageManager, which needs pnpm on PATH before corepack enable.
+          package-manager-cache: false
       - run: corepack enable # pnpm at the version pinned in package.json#packageManager
       - run: pnpm install --frozen-lockfile
       - name: Build what this root's tests import
