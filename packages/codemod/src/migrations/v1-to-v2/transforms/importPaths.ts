@@ -52,11 +52,7 @@ export const importPathsTransform: Transform = {
             return spec.includes('/server/');
         });
 
-        const importIndex = sourceFile.getImportDeclarations().indexOf(sdkImports[0]!);
-        // ts-morph inserts by position among all top-level children (own-line comments and statements count), not among imports.
-        const childIndex = sdkImports[0]!.getChildIndex();
-        const previousEnd = childIndex > 0 ? sourceFile.getStatementsWithComments()[childIndex - 1]!.getEnd() : 0;
-        const blankLineAbove = childIndex > 0 && /^[ \t]*\r?\n[ \t]*\r?\n/.test(sourceFile.getFullText().slice(previousEnd));
+        const insertIndex = sourceFile.getImportDeclarations().indexOf(sdkImports[0]!);
 
         // A leading file-header / JSDoc comment attaches to the first SDK import as leading trivia. When
         // that import is removed and re-emitted (the per-symbol split/merge path calls imp.remove()),
@@ -66,12 +62,9 @@ export const importPathsTransform: Transform = {
         // (a blank line, or CRLF in CRLF files), so the later survival check would never match a header
         // that actually survived (in-place setModuleSpecifier rewrite) and would re-insert it, duplicating
         // it. The slice reproduces the block verbatim, so the includes() guard below is byte-exact.
-        // Own-line comments above the import are siblings and survive its removal; only comments attached to it can be dropped.
-        const leadingRanges = sdkImports[0]!.getLeadingCommentRanges().filter(range => range.getPos() >= previousEnd);
+        const leadingRanges = sdkImports[0]!.getLeadingCommentRanges();
         const leadingCommentText =
             leadingRanges.length > 0 ? sourceFile.getFullText().slice(leadingRanges[0]!.getPos(), leadingRanges.at(-1)!.getEnd()) : '';
-        const leadingCommentGap =
-            leadingRanges.length > 0 ? sourceFile.getFullText().slice(leadingRanges.at(-1)!.getEnd(), sdkImports[0]!.getStart()) : '';
 
         interface PendingImport {
             specs: NamedImportSpec[];
@@ -341,10 +334,6 @@ export const importPathsTransform: Transform = {
             }
         }
 
-        // New imports go where the first SDK import stood, or right below it when it was rewritten in place and still stands there.
-        const firstRemoved = sdkImports[0]!.wasForgotten();
-        const insertIndex = firstRemoved ? childIndex : childIndex + 1;
-
         const specLocal = (spec: NamedImportSpec): string => (typeof spec === 'string' ? spec : (spec.alias ?? spec.name));
         for (const [target, groups] of pendingImports) {
             // Dedupe by local binding name (alias when present), keeping the spec so aliases survive.
@@ -356,22 +345,12 @@ export const importPathsTransform: Transform = {
                 }
             }
 
-            let valueInserted = false;
             if (valueSpecs.size > 0) {
-                valueInserted = addOrMergeImport(
-                    sourceFile,
-                    target,
-                    [...valueSpecs.values()],
-                    false,
-                    insertIndex,
-                    firstRemoved && blankLineAbove
-                );
+                addOrMergeImport(sourceFile, target, [...valueSpecs.values()], false, insertIndex);
             }
             if (typeOnlySpecs.size > 0) {
-                // The type import goes one lower only when the value import was inserted, not when it merged into an existing import.
-                const typeInsertIndex = valueInserted ? insertIndex + 1 : insertIndex;
-                const blankLine = firstRemoved && blankLineAbove && !valueInserted;
-                addOrMergeImport(sourceFile, target, [...typeOnlySpecs.values()], true, typeInsertIndex, blankLine);
+                const typeInsertIndex = valueSpecs.size > 0 ? insertIndex + 1 : insertIndex;
+                addOrMergeImport(sourceFile, target, [...typeOnlySpecs.values()], true, typeInsertIndex);
             }
         }
 
@@ -379,8 +358,8 @@ export const importPathsTransform: Transform = {
         // the first import was rewritten in place and kept its comment).
         if (leadingCommentText && !sourceFile.getFullText().includes(leadingCommentText)) {
             const imports = sourceFile.getImportDeclarations();
-            const anchor = imports[Math.min(importIndex, imports.length - 1)];
-            sourceFile.insertText(anchor ? anchor.getStart() : 0, `${leadingCommentText}${leadingCommentGap}`);
+            const anchor = imports[Math.min(insertIndex, imports.length - 1)];
+            sourceFile.insertText(anchor ? anchor.getStart() : 0, `${leadingCommentText}\n`);
         }
 
         return { changesCount, diagnostics, usedPackages };

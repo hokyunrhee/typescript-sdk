@@ -64,16 +64,14 @@ function specLocalName(s: { name: string; alias?: string }): string {
     return s.alias ?? s.name;
 }
 
-/** Adds the names to an existing import of the module, or inserts a new import; returns true when it inserted one. */
 export function addOrMergeImport(
     sourceFile: SourceFile,
     moduleSpecifier: string,
     namedImports: NamedImportSpec[],
     isTypeOnly: boolean,
-    insertIndex: number,
-    blankLineAbove = false
-): boolean {
-    if (namedImports.length === 0) return false;
+    insertIndex: number
+): void {
+    if (namedImports.length === 0) return;
 
     const specs = namedImports.map(n => toSpec(n));
 
@@ -88,7 +86,6 @@ export function addOrMergeImport(
         if (newSpecs.length > 0) {
             existing.addNamedImports(newSpecs.map(s => (s.alias ? { name: s.name, alias: s.alias } : { name: s.name })));
         }
-        return false;
     } else {
         const seen = new Set<string>();
         const deduped = specs.filter(s => {
@@ -97,14 +94,12 @@ export function addOrMergeImport(
             seen.add(local);
             return true;
         });
-        const clampedIndex = Math.min(insertIndex, sourceFile.getStatementsWithComments().length);
+        const clampedIndex = Math.min(insertIndex, sourceFile.getImportDeclarations().length);
         sourceFile.insertImportDeclaration(clampedIndex, {
             moduleSpecifier,
             namedImports: deduped.map(s => (s.alias ? { name: s.name, alias: s.alias } : { name: s.name })),
-            isTypeOnly,
-            leadingTrivia: blankLineAbove ? writer => writer.blankLineIfLastNot() : undefined
+            isTypeOnly
         });
-        return true;
     }
 }
 
