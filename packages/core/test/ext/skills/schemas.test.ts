@@ -27,6 +27,11 @@ describe('SkillSchema', () => {
         expect((parsed as Record<string, unknown>)['future']).toBe(true);
     });
 
+    it('rejects an empty skill name and one longer than 64 characters', () => {
+        expect(SkillSchema.safeParse(skill({ frontmatter: { name: '', description: 'd' } })).success).toBe(false);
+        expect(SkillSchema.safeParse(skill({ frontmatter: { name: 'a'.repeat(65), description: 'd' } })).success).toBe(false);
+    });
+
     it('keeps frontmatter fields beyond name and description', () => {
         const parsed = SkillSchema.parse(skill({ frontmatter: { name: 'git-workflow', description: 'd', license: 'MIT' } }));
         expect(parsed.frontmatter).toEqual({ name: 'git-workflow', description: 'd', license: 'MIT' });
