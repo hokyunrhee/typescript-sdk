@@ -163,6 +163,8 @@ export class InMemoryResponseCacheStore implements ResponseCacheStore {
     private _stamp = 0;
     /** Count of held entries that are subject to the cap (i.e. not in {@linkcode CAP_EXEMPT_METHODS}). */
     private _cappedSize = 0;
+    #hits = 0;
+    #misses = 0;
 
     constructor(options?: InMemoryResponseCacheStoreOptions) {
         this._maxEntries = options?.maxEntries ?? 512;
@@ -173,8 +175,19 @@ export class InMemoryResponseCacheStore implements ResponseCacheStore {
         return this._entries.size;
     }
 
+    /** Hits and misses of {@linkcode get} since the store was created (for diagnostics). */
+    get stats(): { hits: number; misses: number } {
+        return { hits: this.#hits, misses: this.#misses };
+    }
+
     get(key: CacheKey): CacheEntry | undefined {
-        return this._entries.get(keyOf(key));
+        const entry = this._entries.get(keyOf(key));
+        if (entry === undefined) {
+            this.#misses++;
+        } else {
+            this.#hits++;
+        }
+        return entry;
     }
 
     set(key: CacheKey, entry: { value: string; expiresAt?: number; scope?: CacheScope }): number {

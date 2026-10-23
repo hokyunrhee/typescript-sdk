@@ -1337,3 +1337,15 @@ describe('Client honours cacheHints (SEP-2549)', () => {
         expect(errors.map(e => e.message)).toContain('redis down');
     });
 });
+
+describe('InMemoryResponseCacheStore stats', () => {
+    it('counts hits and misses of get()', () => {
+        const store = new InMemoryResponseCacheStore();
+        const key = { method: 'tools/list' };
+        store.get(key);
+        store.set(key, { value: '{}' });
+        store.get(key);
+        store.get(key);
+        expect(store.stats).toEqual({ hits: 2, misses: 1 });
+    });
+});
