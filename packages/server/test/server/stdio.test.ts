@@ -466,3 +466,31 @@ test('should fire onerror and close when ReadBuffer overflows', async () => {
     expect(receivedError?.message).toMatch(/ReadBuffer exceeded maximum size/);
     expect(closeCount).toBe(1);
 });
+
+test('should read messages from a stdin that emits strings', async () => {
+    input.setEncoding('utf8');
+    const server = new StdioServerTransport(input, output);
+    server.onerror = error => {
+        throw error;
+    };
+
+    const messages: JSONRPCMessage[] = [
+        { jsonrpc: '2.0', id: 1, method: 'ping' },
+        { jsonrpc: '2.0', method: 'notifications/initialized' }
+    ];
+    const received: JSONRPCMessage[] = [];
+    const done = new Promise<void>(resolve => {
+        server.onmessage = message => {
+            received.push(message);
+            if (received.length === messages.length) resolve();
+        };
+    });
+
+    await server.start();
+    for (const message of messages) {
+        input.push(serializeMessage(message));
+    }
+    await done;
+    expect(received).toEqual(messages);
+    await server.close();
+});

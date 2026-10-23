@@ -58,9 +58,10 @@ export class StdioServerTransport implements Transport {
     onmessage?: (message: JSONRPCMessage) => void;
 
     // Arrow functions to bind `this` properly, while maintaining function identity.
-    _ondata = (chunk: Buffer) => {
+    _ondata = (chunk: Buffer | string) => {
         try {
-            this._readBuffer.append(chunk);
+            // A stdin with setEncoding() emits strings instead of Buffers.
+            this._readBuffer.append(typeof chunk === 'string' ? Buffer.from(chunk, 'utf8') : chunk);
             this.processReadBuffer();
         } catch (error) {
             this.onerror?.(error as Error);
