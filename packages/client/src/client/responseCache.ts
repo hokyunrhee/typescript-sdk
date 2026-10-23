@@ -698,7 +698,9 @@ function encodeCacheValue(value: unknown): string {
     try {
         json = JSON.stringify(value);
     } catch (error) {
-        throw new TypeError(`cache value is not JSON-serializable: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TypeError(`cache value is not JSON-serializable: ${error instanceof Error ? error.message : String(error)}`, {
+            cause: error
+        });
     }
     if (typeof json !== 'string') throw new TypeError('cache value is not JSON-serializable: it has no JSON representation');
     return json;
