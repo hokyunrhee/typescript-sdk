@@ -149,3 +149,15 @@ describe('InMemoryServerEventBus', () => {
         ]);
     });
 });
+
+describe('InMemoryServerEventBus.once', () => {
+    it('delivers only the next event and then drops the listener', () => {
+        const bus = new InMemoryServerEventBus();
+        const seen: string[] = [];
+        bus.once(event => seen.push(event.kind));
+        bus.publish({ kind: 'tools_list_changed' });
+        bus.publish({ kind: 'prompts_list_changed' });
+        expect(seen).toEqual(['tools_list_changed']);
+        expect(bus.listenerCount).toBe(0);
+    });
+});

@@ -86,6 +86,18 @@ export class InMemoryServerEventBus implements ServerEventBus {
         };
     }
 
+    /**
+     * Register a listener for the next event only; returns an idempotent
+     * unsubscribe function for dropping it before that event arrives.
+     */
+    once(listener: (event: ServerEvent) => void): () => void {
+        const unsubscribe = this.subscribe(event => {
+            unsubscribe();
+            listener(event);
+        });
+        return unsubscribe;
+    }
+
     /** The number of currently registered listeners (test/introspection only — the routers track capacity via their own open-subscription set). */
     get listenerCount(): number {
         return this._listeners.size;
