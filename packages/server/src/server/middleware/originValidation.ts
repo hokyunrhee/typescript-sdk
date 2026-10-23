@@ -32,11 +32,6 @@ export type OriginValidationResult =
  *   and only browser-originated requests carry the header this check defends against.
  * - Allowlist items are hostnames only (no scheme, no port), the same convention as
  *   `validateHostHeader`. For IPv6, include brackets (e.g. `[::1]`).
- * - A browser extension's origin carries its extension ID as the hostname; list the
- *   ID to allow one extension. An allowlist item of the form `<scheme>://*`
- *   (lowercase, e.g. `moz-extension://*`) allows every origin of that scheme, which
- *   Firefox needs because its extension IDs differ on every install.
- *   `http://*` and `https://*` are not honoured: list websites by hostname.
  * - Any present value that cannot be parsed as an origin URL — including the literal
  *   `null` origin browsers send for opaque contexts — is rejected (deny on failure).
  */
@@ -46,11 +41,8 @@ export function validateOriginHeader(originHeader: string | null | undefined, al
     }
 
     let hostname: string;
-    let scheme: string;
     try {
-        const url = new URL(originHeader);
-        hostname = url.hostname;
-        scheme = url.protocol;
+        hostname = new URL(originHeader).hostname;
     } catch {
         return { ok: false, errorCode: 'invalid_origin_header', message: `Invalid Origin header: ${originHeader}`, originHeader };
     }
@@ -60,8 +52,7 @@ export function validateOriginHeader(originHeader: string | null | undefined, al
         return { ok: false, errorCode: 'invalid_origin_header', message: `Invalid Origin header: ${originHeader}`, originHeader };
     }
 
-    const schemeAllowed = scheme !== 'http:' && scheme !== 'https:' && allowedOriginHostnames.includes(`${scheme}//*`);
-    if (!schemeAllowed && !allowedOriginHostnames.includes(hostname)) {
+    if (!allowedOriginHostnames.includes(hostname)) {
         return { ok: false, errorCode: 'invalid_origin', message: `Invalid Origin: ${hostname}`, originHeader, hostname };
     }
 
