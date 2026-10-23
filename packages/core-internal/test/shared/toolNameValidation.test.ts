@@ -1,7 +1,7 @@
 import type { MockInstance } from 'vitest';
 import { vi } from 'vitest';
 
-import { issueToolNameWarning, validateAndWarnToolName, validateToolName } from '../../src/shared/toolNameValidation';
+import { issueToolNameWarning, toValidToolName, validateAndWarnToolName, validateToolName } from '../../src/shared/toolNameValidation';
 
 // Spy on console.warn to capture output
 let warnSpy: MockInstance;
@@ -126,5 +126,13 @@ describe('edge cases and robustness', () => {
         const result = validateToolName(toolName);
         expect(result.isValid).toBe(shouldBeValid);
         expect(result.warnings).toContain(expectedWarning);
+    });
+});
+
+describe('toValidToolName', () => {
+    it('returns a tool name', () => {
+        const name = toValidToolName('  Send email! ');
+        expect(name).toBeDefined();
+        expect(name).toBeTruthy();
     });
 });

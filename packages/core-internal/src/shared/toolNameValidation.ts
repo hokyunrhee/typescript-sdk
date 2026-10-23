@@ -114,3 +114,13 @@ export function validateAndWarnToolName(name: string): boolean {
 
     return result.isValid;
 }
+
+/**
+ * Turns an arbitrary label into a tool name that passes {@link validateToolName}:
+ * surrounding whitespace is dropped, every other character outside
+ * `A-Z a-z 0-9 . _ -` becomes `_`, and the result is cut to 128 characters.
+ */
+export function toValidToolName(label: string): string {
+    const replaced = label.trim().replace(/[^A-Za-z0-9._-]/g, '_');
+    return replaced.slice(0, 128);
+}
