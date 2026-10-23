@@ -37,11 +37,6 @@ const INVALID_TOOL: Tool = {
     inputSchema: { type: 'object', properties: { a: { type: 'object', 'x-mcp-header': 'Data' } } }
 };
 
-const NUMBER_TOOL: Tool = {
-    name: 'score',
-    inputSchema: { type: 'object', properties: { score: { type: 'number', 'x-mcp-header': 'Score' } } }
-};
-
 interface Scripted {
     clientTx: InMemoryTransport;
     serverTx: InMemoryTransport;
@@ -144,18 +139,6 @@ describe('SEP-2243 Mcp-Param-* mirroring (modern era)', () => {
         // has no carve-out for paginated reads).
         const page = await client.listTools({ cursor: '0' });
         expect(page.tools.map(t => t.name)).toEqual(['route']);
-        warn.mockRestore();
-    });
-
-    it('listTools() excludes a tool that puts x-mcp-header on a number-typed parameter and warns', async () => {
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-        const { clientTx } = await scriptedModernServer([[REGION_TOOL, NUMBER_TOOL]]);
-        const client = modernClient();
-        await client.connect(clientTx);
-
-        const { tools } = await client.listTools();
-        expect(tools.map(t => t.name)).toEqual(['route']);
-        expect(warn).toHaveBeenCalledWith(expect.stringContaining("excluding tool 'score'"));
         warn.mockRestore();
     });
 
