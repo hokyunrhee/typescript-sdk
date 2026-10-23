@@ -218,6 +218,8 @@ export class InMemoryResponseCacheStore implements ResponseCacheStore {
     clear(): void {
         this._entries.clear();
         this._cappedSize = 0;
+        // A cleared store starts its write counter over.
+        this._stamp = 0;
     }
 }
 
